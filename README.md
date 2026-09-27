@@ -1,5 +1,7 @@
 # CampusFlow — College Leave & Attendance
 
+For a GitHub-hosted POC URL, follow [the Codespaces setup](CODESPACES.md). Java 17, Maven, port forwarding, and automatic H2 demo startup are configured in `.devcontainer/`.
+
 Java 17 · Spring Boot 4.1.1 · Spring Security · Persistent H2 · Responsive HTML/CSS/JavaScript
 
 ## Start the demo
