@@ -1,0 +1,8 @@
+target/
+data/
+.env
+.git/
+*.log
+**/*.mv.db
+**/*.trace.db
+backups/

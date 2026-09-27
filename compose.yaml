@@ -1,0 +1,23 @@
+services:
+  campusflow:
+    build: .
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      H2_DATA_PATH: /data/campusflow
+      DB_USERNAME: ${DB_USERNAME:-sa}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      HOD_PIN: ${HOD_PIN:?Set HOD_PIN in .env}
+      HOD_PASSWORD: ${HOD_PASSWORD:?Set HOD_PASSWORD in .env}
+      HOD_MOBILE: ${HOD_MOBILE:?Set HOD_MOBILE in .env}
+      HOD_NAME: ${HOD_NAME:-Department Head}
+      HOD_DEPARTMENT: ${HOD_DEPARTMENT:-Computer Engineering}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_FROM: ${TWILIO_FROM:-}
+    volumes:
+      - campusflow-data:/data
+    restart: unless-stopped
+volumes:
+  campusflow-data:

@@ -1,0 +1,24 @@
+name: Java 17 build
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Test and package
+        run: mvn -B -ntp clean verify
+      - uses: actions/upload-artifact@v4
+        with:
+          name: campusflow-java17
+          path: target/campusflow-1.0.0.jar
