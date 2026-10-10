@@ -27,7 +27,7 @@ Demo mode uses a separate persistent H2 database in `data/demo/`, with sample at
 
 No MySQL installation or connection is needed. The default profile stores real accounts, attendance, leave, notifications, and recovery records in an H2 file database. Tables are created automatically on first startup. The default profile creates only the initial HOD; it does not create demo users.
 
-1. Copy `.env.example` to `.env` and set a database password and the initial HOD's PIN, password, mobile, name, and department.
+1. Copy `.env.example` to `.env` and set a database password and the initial HOD's PIN, password, mobile, Gmail address, name, and department.
 2. Run `./start.ps1` on Windows. This script loads `.env`. Alternatively, export the environment variables and run `java -jar target/campusflow-1.0.0.jar`. Spring Boot does not automatically read `.env`.
 3. Sign in as HOD, then let teachers register and approve their accounts. Students can then register under approved teachers.
 
@@ -67,7 +67,7 @@ Tables are created with the idempotent `schema.sql` initializer. Subsequent sche
 
 ## Screens and workflow
 
-- **Public:** login with PIN/password, registration, mobile code recovery, new password.
+- **Public:** login with PIN/password, registration with Gmail, email code recovery, new password.
 - **Student:** dashboard, new leave, request history and decision timeline, attendance, reports/CSV, notifications.
 - **Teacher:** dashboard, assigned-student registration reviews, student leave approvals/escalation, daily attendance, personal leave submitted to HOD, reports and notifications.
 - **HOD:** department dashboard, teacher registration reviews, escalated student/teacher leave approvals, department attendance and leave reports, notifications.
@@ -93,11 +93,13 @@ Attendance = PRESENT ÷ all marked days, including ABSENT and LEAVE. Unmarked da
 
 ## SMS and password recovery
 
-Provide a Twilio account SID, auth token, and approved sending number locally in `.env`. All mobile numbers use international format, e.g. `+919876543210`. Your provider/account must permit delivery to your recipients; configure any required sender/template registrations in that provider.
+Email uses Gmail SMTP. Set `MAIL_ENABLED=true`, `MAIL_USERNAME` to the sending Gmail address, `MAIL_PASSWORD` to a Google App Password, and `MAIL_FROM` to that Gmail address in `.env` or the hosting provider's secret settings. Do not use your regular Gmail password or commit secrets. Gmail requires 2-Step Verification before you can create an App Password. The app sends registration receipts, account/review notifications, and password reset codes. If email is not configured, account registration still works, but email recovery is unavailable. Existing accounts created before email support have a blank email; an administrator must add each user's correct email before that account can use recovery.
+
+Twilio SMS is an optional separate feature. Provide a Twilio account SID, auth token, and approved sending number in `.env` to enable SMS notifications. All mobile numbers use international format, e.g. `+919876543210`.
 
 In-app notifications work without SMS. When configured, registration/leave notifications enter `sms_outbox`, are attempted every minute, and retry up to three times. `SENT` means the provider accepted the message, not handset delivery confirmation. `FAILED` messages remain visible in the database for administrator follow-up. Delivery receipts and a delivery-monitoring UI are not included. The dispatcher is intended for a single app instance; use distributed locking before horizontal scaling.
 
-Password recovery checks PIN + registered mobile for an approved account, sends a random six-digit code, hashes it in the database, expires it after five minutes, and allows at most five attempts. Recovery responses do not disclose whether an account exists. Requests are throttled per PIN and source IP. Codes are never shown in the UI or application logs. SMS recovery stays unavailable until a provider is configured; there is no insecure demo bypass.
+Password recovery checks PIN + registered Gmail address for an approved account, sends a random six-digit code, hashes it in the database, expires it after five minutes, and allows at most five attempts. Recovery responses do not disclose whether an account exists. Requests are throttled per PIN and source IP. Codes are never shown in the UI or application logs. Email recovery stays unavailable until Gmail SMTP is configured; there is no insecure demo bypass.
 
 ## Security and deployment
 

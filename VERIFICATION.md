@@ -25,4 +25,10 @@ The sandbox's Windows file permissions caused the standard JDK compiler's `Path.
 - Production deployment: configure HTTPS, secure cookies, database credentials, your real HOD account, backups, and your SMS sender.
 - GitHub Actions and Docker configuration are supplied but have not been executed on GitHub or a Docker host in this environment.
 
+## Gmail update (10 October 2026)
+
+- The Java 17 Maven package compiled successfully with tests skipped after adding Gmail SMTP, registration email, password recovery by email, and a startup migration for the H2/MySQL `users.email` field. No tests were run for this update.
+- Gmail delivery was not exercised because sender credentials were not provided. Add `MAIL_ENABLED`, `MAIL_USERNAME`, `MAIL_PASSWORD` (Google App Password), and `MAIL_FROM` as private environment/Codespaces secrets to enable it.
+- Existing accounts are migrated with a blank email value; an administrator must add each account's correct email before it can use email password recovery.
+
 Policy recommendations are deterministic rules, not a trained AI/ML model. Future features from the PPT (voice assistant, native mobile app, external attendance integration and advanced fraud detection) are not claimed as implemented.

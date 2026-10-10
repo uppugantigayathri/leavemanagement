@@ -20,16 +20,17 @@ public class Api {
  final Map<String,Long> resetThrottle=new ConcurrentHashMap<>();
  public Api(PortalService svc,TransactionTemplate tx,org.springframework.security.core.session.SessionRegistry sessions){this.svc=svc;this.tx=tx;this.sessions=sessions;}
  public record Register(@NotBlank @Pattern(regexp="[A-Za-z0-9-]{5,40}") String pin,@NotBlank @Size(max=100) String name,
+  @NotBlank @Email @Size(max=254) String email,
   @Pattern(regexp="\\+[1-9][0-9]{9,14}") @NotNull String mobile,@NotBlank @Size(min=10,max=64) String password,
   @NotNull String role,@NotBlank @Size(max=100) String department,Long mentorId){}
  public record LeaveForm(@NotNull LocalDate startDate,@NotNull LocalDate endDate,@NotBlank String kind,@NotBlank @Size(min=10,max=2000) String reason){}
  public record Decision(@NotBlank String action,@NotBlank @Size(max=500) String note){}
  public record AttendanceEntry(long studentId,@NotBlank String status){}
  public record AttendanceForm(@NotNull LocalDate date,@NotNull @Size(min=1,max=200) List<@Valid AttendanceEntry> entries){}
- public record Forgot(@NotBlank @Size(max=40) String pin,@NotBlank @Size(max=20) String mobile){}
+ public record Forgot(@NotBlank @Size(max=40) String pin,@NotBlank @Email @Size(max=254) String email){}
  public record Reset(@NotBlank @Size(max=40) String pin,@Pattern(regexp="[0-9]{6}") @NotNull String code,@Size(min=10,max=64) @NotNull String password){}
  @GetMapping("/public/config") Object config(CsrfToken csrf){
-  return Map.of("csrfToken",csrf.getToken(),"csrfHeader",csrf.getHeaderName(),"demo",demo,"smsEnabled",svc.messaging().configured(),
+  return Map.of("csrfToken",csrf.getToken(),"csrfHeader",csrf.getHeaderName(),"demo",demo,"emailEnabled",svc.email().configured(),
    "departments",svc.database().queryForList("SELECT DISTINCT department FROM users WHERE role='HOD' AND status='APPROVED'"),
    "mentors",svc.database().queryForList("SELECT id,name,department FROM users WHERE role='TEACHER' AND status='APPROVED'"));
  }
@@ -41,20 +42,20 @@ public class Api {
  @PostMapping("/attendance") Object attendance(Principal p,@Valid @RequestBody AttendanceForm r){svc.markAttendance(svc.user(p.getName()),r);return Map.of("ok",true);}
  @PostMapping("/notifications/read") Object read(Principal p){svc.database().update("UPDATE notifications SET is_read=TRUE WHERE user_id=?",PortalService.id(svc.user(p.getName()),"id"));return Map.of("ok",true);}
  @PostMapping("/public/forgot") Object forgot(@Valid @RequestBody Forgot r,HttpServletRequest request){
-  PortalService.check(svc.messaging().configured(),"SMS recovery is not configured. Contact your department administrator.");
+  PortalService.check(svc.email().configured(),"Email delivery is not configured. Contact your department administrator.");
   String key=r.pin().toUpperCase();long now=System.currentTimeMillis();
   synchronized(resetThrottle){
    resetThrottle.entrySet().removeIf(e->now-e.getValue()>3600000);
    PortalService.check(now-resetThrottle.getOrDefault(key,0L)>60000 && now-resetThrottle.getOrDefault("ip:"+request.getRemoteAddr(),0L)>60000,"Please wait one minute before requesting another code.");
    resetThrottle.put(key,now);resetThrottle.put("ip:"+request.getRemoteAddr(),now);
   }
-  var users=svc.database().queryForList("SELECT * FROM users WHERE pin=? AND mobile=? AND status='APPROVED'",key,r.mobile());
+  var users=svc.database().queryForList("SELECT * FROM users WHERE pin=? AND LOWER(email)=? AND status='APPROVED'",key,r.email().trim().toLowerCase(Locale.ROOT));
   if(!users.isEmpty()){
    long uid=PortalService.id(users.get(0),"id");String code=String.format("%06d",new SecureRandom().nextInt(1000000));
    tx.executeWithoutResult(s->{svc.database().update("DELETE FROM reset_codes WHERE user_id=?",uid);svc.database().update("INSERT INTO reset_codes(user_id,code_hash,expires_at) VALUES (?,?,?)",uid,svc.passwordEncoder().encode(code),LocalDateTime.now().plusMinutes(5));});
-   if(!svc.messaging().send(r.mobile(),"CampusFlow password reset code: "+code+". Expires in 5 minutes. Do not share this code."))svc.database().update("DELETE FROM reset_codes WHERE user_id=?",uid);
+   if(!svc.email().send(r.email().trim(),"CampusFlow password reset code","Your CampusFlow password reset code is: "+code+"\n\nIt expires in 5 minutes. If you did not request this code, you can ignore this email. Do not share this code."))svc.database().update("DELETE FROM reset_codes WHERE user_id=?",uid);
   }
-  return Map.of("message","If the PIN and mobile match an approved account, a code will be sent. It expires in 5 minutes.");
+  return Map.of("message","If the PIN and registered email match an approved account, a code will be sent. It expires in 5 minutes.");
  }
  @PostMapping("/public/reset") Object reset(@Valid @RequestBody Reset r){
   Boolean valid=tx.execute(s->{

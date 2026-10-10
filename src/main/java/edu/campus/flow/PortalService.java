@@ -12,11 +12,12 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class PortalService {
- final JdbcTemplate db; final PasswordEncoder encoder; final SmsService sms;
- public PortalService(JdbcTemplate db,PasswordEncoder encoder,SmsService sms){this.db=db;this.encoder=encoder;this.sms=sms;}
+ final JdbcTemplate db; final PasswordEncoder encoder; final SmsService sms; final EmailService email;
+ public PortalService(JdbcTemplate db,PasswordEncoder encoder,SmsService sms,EmailService email){this.db=db;this.encoder=encoder;this.sms=sms;this.email=email;}
  public JdbcTemplate database(){return db;}
  public PasswordEncoder passwordEncoder(){return encoder;}
  public SmsService messaging(){return sms;}
+ public EmailService email(){return email;}
  static void check(boolean ok,String message){if(!ok)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,message);}
  static long id(Map<String,Object> m,String k){return ((Number)m.get(k)).longValue();}
  Map<String,Object> user(String pin){return db.queryForMap("SELECT * FROM users WHERE pin=?",pin);}
@@ -29,6 +30,7 @@ public class PortalService {
  void notifyUser(long uid,String message){
   db.update("INSERT INTO notifications(user_id,message) VALUES (?,?)",uid,message);
   if(sms.configured())db.update("INSERT INTO sms_outbox(user_id,message) VALUES (?,?)",uid,"CampusFlow: "+message);
+  if(email.configured())db.queryForList("SELECT email,name FROM users WHERE id=?",uid).forEach(u->email.send((String)u.get("email"),"CampusFlow account update", "Hello "+u.get("name")+",\n\n"+message+"\n\nCampusFlow"));
  }
  void notifyReviewers(Map<String,Object> subject,String target,String message){
   if(target.equals("TEACHER")&&subject.get("mentor_id")!=null)notifyUser(id(subject,"mentor_id"),message);
@@ -43,9 +45,11 @@ public class PortalService {
    check(!found.isEmpty(),"Choose an approved mentor in your department.");mentor=r.mentorId();
   }
   check(!db.queryForList("SELECT id FROM users WHERE role='HOD' AND status='APPROVED' AND department=?",r.department()).isEmpty(),"Department is not configured.");
-  check(db.queryForObject("SELECT COUNT(*) FROM users WHERE pin=? OR mobile=?",Integer.class,r.pin().toUpperCase(),r.mobile())==0,"PIN or mobile number is already registered.");
-  db.update("INSERT INTO users(pin,name,mobile,password,role,status,department,mentor_id) VALUES (?,?,?,?,?,'PENDING',?,?)",r.pin().toUpperCase(),r.name(),r.mobile(),encoder.encode(r.password()),r.role(),r.department(),mentor);
+  String normalizedEmail=r.email().trim().toLowerCase(Locale.ROOT);
+  check(db.queryForObject("SELECT COUNT(*) FROM users WHERE pin=? OR mobile=? OR LOWER(email)=?",Integer.class,r.pin().toUpperCase(),r.mobile(),normalizedEmail)==0,"PIN, mobile number, or email is already registered.");
+  db.update("INSERT INTO users(pin,name,email,mobile,password,role,status,department,mentor_id) VALUES (?,?,?,?,?,?,'PENDING',?,?)",r.pin().toUpperCase(),r.name(),normalizedEmail,r.mobile(),encoder.encode(r.password()),r.role(),r.department(),mentor);
   var u=user(r.pin().toUpperCase());notifyReviewers(u,r.role().equals("STUDENT")?"TEACHER":"HOD",r.name()+" registered and needs your review.");
+  email.send(normalizedEmail,"CampusFlow registration received","Hello "+r.name()+",\n\nYour CampusFlow registration has been received and is waiting for approval. You will receive another email when it is reviewed.\n\nCampusFlow");
  }
  @Transactional public void reviewRegistration(Map<String,Object> actor,long uid,Api.Decision d){
   var u=db.queryForMap("SELECT * FROM users WHERE id=? FOR UPDATE",uid);

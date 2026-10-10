@@ -24,7 +24,11 @@ Use the role buttons on the login page, or these accounts:
 | Teacher | FAC-CM-101 | Campus@2026 |
 | HOD | HOD-CM-001 | Campus@2026 |
 
-This is a shared sample-data POC. People with the public URL can use the published demo accounts, including HOD, and change demo records. Do not enter real student data or secrets. SMS is disabled by the demo profile.
+This is a shared sample-data POC. People with the public URL can use the published demo accounts, including HOD, and change demo records. Do not enter real student data or secrets. SMS is disabled by the demo profile. Email is disabled until Gmail SMTP environment secrets are configured.
+
+## Gmail email and password recovery
+
+To send registration receipts, account updates, and password-reset codes, create a Google App Password for the sending Gmail account (Google requires 2-Step Verification). In GitHub, open **Settings → Codespaces → Secrets** and add `MAIL_ENABLED=true`, `MAIL_USERNAME` (the sender Gmail), `MAIL_PASSWORD` (the App Password), and `MAIL_FROM` (usually the same sender address). Never add these values to repository files. Restart or rebuild the Codespace so the secrets are available to the app. Existing accounts from before email support have no email address; an administrator must add each user's correct email to the `email` column before that account can use recovery. New registrations must provide an email address.
 
 ## Starting, stopping, and updating
 
