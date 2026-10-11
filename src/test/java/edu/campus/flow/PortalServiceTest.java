@@ -18,7 +18,18 @@ class PortalServiceTest {
  Map<String,Object> teacher(){return svc.user("FAC-CM-101");}
  Map<String,Object> hod(){return svc.user("HOD-CM-001");}
  Map<String,Object> admin(){return svc.user("ADMIN-CM-001");}
- @Test void attendanceAndSectionsAreSeededForThirtyDays(){assertEquals(83.3,svc.attendance(PortalService.id(student(),"id")));assertEquals(480,svc.database().queryForObject("SELECT COUNT(*) FROM attendance",Integer.class));assertEquals(16,svc.database().queryForObject("SELECT COUNT(*) FROM users WHERE role='STUDENT' AND status='APPROVED'",Integer.class));for(String section:List.of("A","B","C","D"))assertEquals(4,svc.database().queryForObject("SELECT COUNT(*) FROM users WHERE role='STUDENT' AND status='APPROVED' AND section=?",Integer.class,section));assertEquals("A",student().get("section"));}
+ @Test void attendanceAndSectionsAreSeededForThirtyDays(){
+  assertEquals(83.3,svc.attendance(PortalService.id(student(),"id")));
+  assertEquals(1920,svc.database().queryForObject("SELECT COUNT(*) FROM attendance",Integer.class));
+  assertEquals(64,svc.database().queryForObject("SELECT COUNT(*) FROM users WHERE role='STUDENT' AND status='APPROVED'",Integer.class));
+  for(String section:List.of("A","B","C","D")){
+   assertEquals(16,svc.database().queryForObject("SELECT COUNT(*) FROM users WHERE role='STUDENT' AND status='APPROVED' AND section=?",Integer.class,section));
+   assertEquals(4,svc.database().queryForObject("SELECT COUNT(*) FROM users WHERE role='STUDENT' AND status='APPROVED' AND department=? AND section=?",Integer.class,"Computer Engineering",section));
+  }
+  assertEquals(16,svc.database().queryForObject("SELECT COUNT(*) FROM users WHERE role='STUDENT' AND status='APPROVED' AND mentor_id=?",Integer.class,PortalService.id(teacher(),"id")));
+  assertEquals(480,svc.database().queryForObject("SELECT COUNT(*) FROM attendance a JOIN users u ON u.id=a.student_id WHERE u.role='STUDENT' AND u.department=?",Integer.class,"Computer Engineering"));
+  assertEquals("A",student().get("section"));
+ }
  @Test void studentCannotSelfApproveRegistration(){var pending=svc.user("24093-CM-206");assertThrows(ResponseStatusException.class,()->svc.reviewRegistration(pending,PortalService.id(pending,"id"),new Api.Decision("APPROVE","Self approval")));}
  @Test void teacherApprovesOnlyStudentsAndHodApprovesTeacher(){
   svc.register(new Api.Register("24093-CM-299","New Student","new.student@example.com","9876500099","SafePassword123","STUDENT","Computer Engineering","A",PortalService.id(teacher(),"id")));
@@ -77,3 +88,4 @@ class PortalServiceTest {
  @Test void passwordResetCodeIsSingleUse(){long uid=PortalService.id(student(),"id");svc.database().update("INSERT INTO reset_codes(user_id,code_hash,expires_at) VALUES (?,?,?)",uid,svc.passwordEncoder().encode("123456"),java.time.LocalDateTime.now().plusMinutes(5));api.reset(new Api.Reset("24093-CM-228","123456","ChangedPassword123"));assertTrue(svc.passwordEncoder().matches("ChangedPassword123",svc.user("24093-CM-228").get("password").toString()));assertThrows(ResponseStatusException.class,()->api.reset(new Api.Reset("24093-CM-228","123456","AnotherPassword123")));}
  @Test void resetLocksAfterFiveWrongAttempts(){long uid=PortalService.id(student(),"id");svc.database().update("INSERT INTO reset_codes(user_id,code_hash,expires_at) VALUES (?,?,?)",uid,svc.passwordEncoder().encode("123456"),java.time.LocalDateTime.now().plusMinutes(5));for(int i=0;i<5;i++)assertThrows(ResponseStatusException.class,()->api.reset(new Api.Reset("24093-CM-228","000000","ChangedPassword123")));assertThrows(ResponseStatusException.class,()->api.reset(new Api.Reset("24093-CM-228","123456","ChangedPassword123")));}
 }
+
