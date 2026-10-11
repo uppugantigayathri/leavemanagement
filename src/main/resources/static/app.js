@@ -8,7 +8,7 @@ const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMon
 const days=l=>Math.round((new Date(l.end_date)-new Date(l.start_date))/86400000)+1;
 const labels={PENDING_TEACHER:'Mentor review',PENDING_HOD:'HOD review',PENDING_ADMIN:'Admin review',APPROVED:'Approved',REJECTED:'Rejected',CANCELLED:'Cancelled',PENDING:'Awaiting review',PRESENT:'Present',ABSENT:'Absent',LEAVE:'On leave'};
 const badge=s=>`<span class="badge ${esc(s.toLowerCase())}">${esc(labels[s]||s)}</span>`;
-let config={},data=null,page='overview',authPage='login',filter='All',query='',reportDepartment='',reportSection='',attendanceSection='';
+let config={},data=null,page='overview',authPage='login',filter='All',query='',reportDepartment='',reportSection='',attendanceSection='',attendanceDate=today();
 async function api(path,body,method,retryCsrf=true){
  const request=()=>{const headers={};if(body!==undefined){headers[config.csrfHeader||'X-CSRF-TOKEN']=config.csrfToken;headers['Content-Type']=body instanceof URLSearchParams?'application/x-www-form-urlencoded':'application/json';}return fetch('/api'+path,{method:method||(body===undefined?'GET':'POST'),headers,body:body===undefined?undefined:body instanceof URLSearchParams?body:JSON.stringify(body)});};
  let res=await request();
