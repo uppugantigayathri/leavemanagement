@@ -43,7 +43,7 @@ The H2 connection sets `WRITE_DELAY=0`, so committed updates are written immedia
 
 For local Docker, fill in `.env`, then run `docker compose up --build -d`. The supplied configuration runs the application with an H2 named volume and no MySQL service. A normal `docker compose down` preserves the volume; do not use `down -v` unless you intend to delete the data. Docker binds localhost by default; configure your hosting platform's routing/HTTPS when deploying publicly. Set `COOKIE_SECURE=true` behind HTTPS.
 
-Demo and deployment databases are separate. The updated demo uses a new `campusflow-v2` H2 file, leaving earlier demo data intact. The Codespaces starter likewise uses `.poc/data/campusflow-v2.mv.db`; existing sample files are preserved. Do not reuse a sample database for real registrations.
+Demo and deployment databases are separate. The expanded demo uses a new `campusflow-v3` H2 file, leaving earlier demo data intact. The Codespaces starter likewise uses `.poc/data/campusflow-v3.mv.db`; existing sample files are preserved. Demo mode seeds 4 students per section (A–D) in each department, with 30 attendance days per student. Do not reuse a sample database for real registrations.
 
 For a consistent backup, stop the application, copy the complete database file to protected backup storage, and restart it. Restore with the application stopped, the same connection credentials, and the same compatible H2 version. Test backups before relying on them.
 
@@ -123,3 +123,4 @@ Build: `mvn clean verify`. Run tests: `mvn test`. JavaScript syntax check: `node
 Spring Boot's official Java compatibility documentation: https://docs.spring.io/spring-boot/system-requirements.html
 
 See `VERIFICATION.md` for the exact checks completed in the delivery environment and remaining integration checks.
+
