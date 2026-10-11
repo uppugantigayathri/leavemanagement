@@ -76,3 +76,39 @@ async function start(){
 }
 start();
 
+document.addEventListener('click',async event=>{
+ const button=event.target.closest('button');
+ if(!button)return;
+ if(button.dataset.auth){authPage=button.dataset.auth;auth();return;}
+ if(button.dataset.demo){
+  $('#pin').value=button.dataset.demo;
+  $('#password').value='Campus@2026';
+  $('#auth-form').requestSubmit();
+  return;
+ }
+ if(button.dataset.page){page=button.dataset.page;render();return;}
+ if(button.hasAttribute('data-menu')){$('.sidebar')?.classList.toggle('open');return;}
+ if(button.hasAttribute('data-logout')){
+  try{await api('/logout',{},'POST');data=null;authPage='login';page='overview';auth();}
+  catch(error){toast(error.message);}
+  return;
+ }
+ if(button.hasAttribute('data-refresh')){try{await refresh();toast('Workspace refreshed.');}catch(error){toast(error.message);}return;}
+ if(button.dataset.filter){filter=button.dataset.filter;render();return;}
+ if(button.dataset.detail){detail(Number(button.dataset.detail));return;}
+ if(button.dataset.decide){decision(Number(button.dataset.decide),button.dataset.action,false);return;}
+ if(button.dataset.register){decision(Number(button.dataset.register),button.dataset.action,true);return;}
+ if(button.hasAttribute('data-close')){$('#modal').close();return;}
+ if(button.hasAttribute('data-read')){
+  try{await api('/notifications/read',{});await refresh();toast('Notifications marked as read.');}
+  catch(error){toast(error.message);}
+  return;
+ }
+ if(button.hasAttribute('data-export')){
+  const headers=['PIN','Name','Department','Section','Leave type','Start date','End date','Status','Reason'];
+  const rows=data.leaves.map(l=>[l.pin,l.name,l.department,l.section,l.kind,l.start_date,l.end_date,l.status,l.reason]);
+  const csv=[headers,...rows].map(row=>row.map(value=>`"${String(value??'').replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const link=document.createElement('a');link.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));link.download='campusflow-leave-register.csv';link.click();URL.revokeObjectURL(link.href);
+ }
+});
+
