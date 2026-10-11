@@ -24,7 +24,7 @@ public class Api {
   @Pattern(regexp="[0-9]{10}") @NotNull String mobile,@NotBlank @Size(min=10,max=64) String password,
   @NotNull String role,@NotBlank @Size(max=100) String department,@Size(max=20) String section,Long mentorId){}
  public record LeaveForm(@NotNull LocalDate startDate,@NotNull LocalDate endDate,@NotBlank String kind,@NotBlank @Size(min=10,max=2000) String reason){}
- public record Decision(@NotBlank String action,@NotBlank @Size(max=500) String note){}
+ public record Decision(@NotBlank String action,@Size(max=500) String note){}
  public record AttendanceEntry(long studentId,@NotBlank String status){}
  public record AttendanceForm(@NotNull LocalDate date,@NotNull @Size(min=1,max=200) List<@Valid AttendanceEntry> entries){}
  public record Forgot(@NotBlank @Size(max=40) String pin,@NotBlank @Email @Size(max=254) String email){}
