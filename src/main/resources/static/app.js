@@ -9,7 +9,15 @@ const days=l=>Math.round((new Date(l.end_date)-new Date(l.start_date))/86400000)
 const labels={PENDING_TEACHER:'Mentor review',PENDING_HOD:'HOD review',PENDING_ADMIN:'Admin review',APPROVED:'Approved',REJECTED:'Rejected',CANCELLED:'Cancelled',PENDING:'Awaiting review',PRESENT:'Present',ABSENT:'Absent',LEAVE:'On leave'};
 const badge=s=>`<span class="badge ${esc(s.toLowerCase())}">${esc(labels[s]||s)}</span>`;
 let config={},data=null,page='overview',authPage='login',filter='All',query='',reportDepartment='',reportSection='',attendanceSection='';
-async function api(path,body,method){const headers={};if(body!==undefined){headers[config.csrfHeader||'X-CSRF-TOKEN']=config.csrfToken;headers['Content-Type']=body instanceof URLSearchParams?'application/x-www-form-urlencoded':'application/json';}const res=await fetch('/api'+path,{method:method||(body===undefined?'GET':'POST'),headers,body:body===undefined?undefined:body instanceof URLSearchParams?body:JSON.stringify(body)});const result=await res.json().catch(()=>({}));if(!res.ok)throw new Error(result.message||(res.status===401?'Please sign in to continue.':res.status===403?'Your session expired. Refresh the page and try again.':'Unable to complete this request.'));return result;}
+async function api(path,body,method,retryCsrf=true){
+ const request=()=>{const headers={};if(body!==undefined){headers[config.csrfHeader||'X-CSRF-TOKEN']=config.csrfToken;headers['Content-Type']=body instanceof URLSearchParams?'application/x-www-form-urlencoded':'application/json';}return fetch('/api'+path,{method:method||(body===undefined?'GET':'POST'),headers,body:body===undefined?undefined:body instanceof URLSearchParams?body:JSON.stringify(body)});};
+ let res=await request();
+ if(res.status===403&&body!==undefined&&retryCsrf){
+  const configResponse=await fetch('/api/public/config');
+  if(configResponse.ok){config=await configResponse.json();res=await request();}
+ }
+ const result=await res.json().catch(()=>({}));if(!res.ok)throw new Error(result.message||(res.status===401?'Please sign in to continue.':res.status===403?'Your session expired. Refresh the page and try again.':'Unable to complete this request.'));return result;
+}
 async function refresh(){config=await api('/public/config');data=await api('/dashboard');render();}
 function toast(message){$('#toast').textContent=message;$('#toast').classList.add('visible');setTimeout(()=>$('#toast').classList.remove('visible'),5000);}
 function field(label,name,type='text',extra=''){return `<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" type="${type}" ${extra} required></div>`;}
@@ -91,7 +99,7 @@ document.addEventListener('click',async event=>{
  if(button.dataset.page){page=button.dataset.page;render();return;}
  if(button.hasAttribute('data-menu')){$('.sidebar')?.classList.toggle('open');return;}
  if(button.hasAttribute('data-logout')){
-  try{await api('/logout',{},'POST');data=null;authPage='login';page='overview';auth();}
+  try{await api('/logout',{},'POST');config=await api('/public/config');data=null;authPage='login';page='overview';auth();}
   catch(error){toast(error.message);}
   return;
  }
