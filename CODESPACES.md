@@ -48,7 +48,7 @@ git pull --ff-only
 bash .devcontainer/start-poc.sh
 ```
 
-Logs: `.poc/app.log`. Updated demo H2 database: `.poc/data/campusflow-v2.mv.db`. Both are excluded from Git. The new demo file gives the updated build a clean sample dataset and preserves the previous `.poc/data/campusflow.mv.db`. Workspace files survive stopping/restarting the same Codespace and normal container rebuilds, but deleting the Codespace deletes them. A different Codespace gets a separate sample database. Export/back up data you want to retain before deleting a Codespace.
+Logs: `.poc/app.log`. Expanded demo H2 database: `.poc/data/campusflow-v3.mv.db`. Both are excluded from Git. The new demo file seeds 4 students per section (A–D) in each department, with 30 attendance days per student, while preserving the previous demo database files. Workspace files survive stopping/restarting the same Codespace and normal container rebuilds, but deleting the Codespace deletes them. A different Codespace gets a separate sample database. Export/back up data you want to retain before deleting a Codespace.
 
 The URL works only while the Codespace and app are running. Codespaces can stop automatically after inactivity; public visitors should not be relied on to prevent this. Stop the Codespace when not demonstrating it, and restart it from https://github.com/codespaces when needed. Check port visibility again after restarting. GitHub usage limits and retention rules still apply; this is not permanent hosting.
 
@@ -59,3 +59,4 @@ If you created a Codespace before this configuration was committed, run **Codesp
 The configuration and Bash syntax were checked locally. Actual container creation, public-port forwarding, and the generated URL must be verified inside your signed-in GitHub account. No public endpoint is claimed until that step completes.
 
 Official documentation: https://docs.github.com/en/codespaces/developing-in-a-codespace/forwarding-ports-in-your-codespace
+
