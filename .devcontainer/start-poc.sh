@@ -17,7 +17,7 @@ if [[ ! -f "$jar" ]] || [[ pom.xml -nt "$jar" ]] || [[ -n "$(find src -type f -n
 fi
 # POC uses sample accounts only. Never select a production profile here.
 export SPRING_PROFILES_ACTIVE=demo
-export H2_DEMO_DATA_PATH="$state/data/campusflow-v2"
+export H2_DEMO_DATA_PATH="$state/data/campusflow-v3"
 export COOKIE_SECURE=true
 export SERVER_FORWARD_HEADERS_STRATEGY=framework
 export SERVER_ADDRESS=0.0.0.0
@@ -40,3 +40,4 @@ for ((i=0; i<120; i++)); do
 done
 echo "Startup has not finished. Check .poc/app.log."
 exit 1
+
