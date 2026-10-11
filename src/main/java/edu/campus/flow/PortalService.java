@@ -68,8 +68,9 @@ public class PortalService {
   check(correctReviewer&&manages(actor,u),"You cannot review this registration.");
   check("PENDING".equals(u.get("status")),"Registration was already reviewed.");
   check(Set.of("APPROVE","REJECT").contains(d.action()),"Invalid decision.");
-  db.update("UPDATE users SET status=?,review_note=? WHERE id=?",d.action().equals("APPROVE")?"APPROVED":"REJECTED",d.note(),uid);
-  notifyUser(uid,"Your registration was "+(d.action().equals("APPROVE")?"approved":"rejected")+". "+d.note());
+  String note=Objects.toString(d.note(),"").trim();
+  db.update("UPDATE users SET status=?,review_note=? WHERE id=?",d.action().equals("APPROVE")?"APPROVED":"REJECTED",note,uid);
+  notifyUser(uid,"Your registration was "+(d.action().equals("APPROVE")?"approved":"rejected")+(note.isEmpty()?".":". "+note));
  }
  double attendance(long uid){
   int total=db.queryForObject("SELECT COUNT(*) FROM attendance WHERE student_id=?",Integer.class,uid);
@@ -113,8 +114,9 @@ public class PortalService {
   else check(canReview(actor,l),"This request is not awaiting your review.");
   String next=switch(d.action()){case "APPROVE"->"APPROVED";case "REJECT"->"REJECTED";case "CANCEL"->"CANCELLED";case "ESCALATE"->{check(role(actor,"TEACHER"),"Only mentors can escalate.");yield "PENDING_HOD";}default->throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Invalid decision.");};
   db.update("UPDATE leaves SET status=? WHERE id=?",next,lid);
-  db.update("INSERT INTO leave_events(leave_id,actor_id,action,note) VALUES (?,?,?,?)",lid,id(actor,"id"),d.action(),d.note());
-  notifyUser(id(l,"user_id"),"Leave #"+lid+": "+next.replace('_',' ')+". "+d.note());
+  String note=Objects.toString(d.note(),"").trim();
+  db.update("INSERT INTO leave_events(leave_id,actor_id,action,note) VALUES (?,?,?,?)",lid,id(actor,"id"),d.action(),note);
+  notifyUser(id(l,"user_id"),"Leave #"+lid+": "+next.replace('_',' ')+(note.isEmpty()?".":". "+note));
   var owner=db.queryForMap("SELECT * FROM users WHERE id=?",l.get("user_id"));
   if(next.equals("PENDING_HOD"))notifyReviewers(owner,"HOD","Leave #"+lid+" was escalated to you.");
  }
