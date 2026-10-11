@@ -35,11 +35,17 @@ public class Bootstrap implements CommandLineRunner {
   String[][] teachers={
    {"FAC-CM-101","Ananya Sharma"},{"FAC-IT-101","Rahul Verma"},
    {"FAC-EC-101","Priya Menon"},{"FAC-ME-101","Rohit Kumar"}};
-  String[][][] students={
-   {{"24093-CM-228","Meghana Reddy"},{"24093-CM-218","Arjun Kumar"},{"24093-CM-206","Sneha Patel"},{"24093-CM-252","Yandamuri Dhatri"}},
-   {{"24093-IT-301","Aarav Shah"},{"24093-IT-302","Diya Kapoor"},{"24093-IT-303","Ishaan Roy"},{"24093-IT-304","Nisha Jain"}},
-   {{"24093-EC-401","Aanya Rao"},{"24093-EC-402","Kabir Das"},{"24093-EC-403","Mira Sen"},{"24093-EC-404","Vihaan Paul"}},
-   {{"24093-ME-501","Anika Bose"},{"24093-ME-502","Dev Malhotra"},{"24093-ME-503","Rhea Iyer"},{"24093-ME-504","Samar Gill"}}
+  String[][] studentPins={
+   {"24093-CM-228","24093-CM-201","24093-CM-202","24093-CM-203","24093-CM-218","24093-CM-204","24093-CM-205","24093-CM-207","24093-CM-206","24093-CM-208","24093-CM-209","24093-CM-210","24093-CM-252","24093-CM-211","24093-CM-212","24093-CM-213"},
+   {"24093-IT-301","24093-IT-305","24093-IT-306","24093-IT-307","24093-IT-302","24093-IT-308","24093-IT-309","24093-IT-310","24093-IT-303","24093-IT-311","24093-IT-312","24093-IT-313","24093-IT-304","24093-IT-314","24093-IT-315","24093-IT-316"},
+   {"24093-EC-401","24093-EC-405","24093-EC-406","24093-EC-407","24093-EC-402","24093-EC-408","24093-EC-409","24093-EC-410","24093-EC-403","24093-EC-411","24093-EC-412","24093-EC-413","24093-EC-404","24093-EC-414","24093-EC-415","24093-EC-416"},
+   {"24093-ME-501","24093-ME-505","24093-ME-506","24093-ME-507","24093-ME-502","24093-ME-508","24093-ME-509","24093-ME-510","24093-ME-503","24093-ME-511","24093-ME-512","24093-ME-513","24093-ME-504","24093-ME-514","24093-ME-515","24093-ME-516"}
+  };
+  String[][] studentNames={
+   {"Meghana Reddy","Ira Nair","Karthik Rao","Sana Iyer","Arjun Kumar","Rohan Das","Pooja Sen","Nikhil Jain","Sneha Patel","Kavya Bose","Aditya Roy","Tara Menon","Yandamuri Dhatri","Vivek Shah","Mira Gill","Aarav Paul"},
+   {"Aarav Shah","Anaya Kapoor","Ishaan Roy","Nisha Jain","Diya Kapoor","Kabir Das","Mira Sen","Vihaan Paul","Riya Nair","Dev Rao","Tanya Bose","Neil Iyer","Sia Menon","Arjun Gill","Aditi Verma","Rohan Patel"},
+   {"Aanya Rao","Kabir Das","Mira Sen","Vihaan Paul","Ishita Nair","Reyansh Shah","Tara Kapoor","Manav Jain","Kiara Roy","Ayaan Bose","Myra Iyer","Neil Menon","Zoya Gill","Rudra Patel","Aarohi Verma","Yash Paul"},
+   {"Anika Bose","Dev Malhotra","Rhea Iyer","Samar Gill","Aarav Menon","Diya Shah","Kabir Nair","Tara Rao","Ishan Kapoor","Mira Patel","Rohan Paul","Sana Verma","Neel Das","Aditi Roy","Kavya Jain","Vivaan Sen"}
   };
   long[] teacherIds=new long[departments.length];
   int mobileSuffix=2;
@@ -48,10 +54,11 @@ public class Bootstrap implements CommandLineRunner {
    long hodId=PortalService.id(svc.user(hods[d][0]),"id");
    add(teachers[d][0],teachers[d][1],"teacher"+(d+1)+"@example.com",mobileNumber(++mobileSuffix),"Campus@2026","TEACHER","APPROVED",departments[d],"",hodId);
    teacherIds[d]=PortalService.id(svc.user(teachers[d][0]),"id");
-   for(int s=0;s<4;s++){
+   for(int s=0;s<4;s++)for(int seat=0;seat<4;seat++){
     String section=String.valueOf((char)('A'+s));
-    String studentPin=students[d][s][0];
-    add(studentPin,students[d][s][1],"student"+studentPin.substring(studentPin.length()-3)+"@example.com",mobileNumber(++mobileSuffix),"Campus@2026","STUDENT","APPROVED",departments[d],section,teacherIds[d]);
+    int studentIndex=s*4+seat;
+    String studentPin=studentPins[d][studentIndex];
+    add(studentPin,studentNames[d][studentIndex],"student"+studentPin.substring(studentPin.length()-3)+"@example.com",mobileNumber(++mobileSuffix),"Campus@2026","STUDENT","APPROVED",departments[d],section,teacherIds[d]);
     long studentId=PortalService.id(svc.user(studentPin),"id");
     for(int day=30;day>=1;day--){
      boolean present=studentPin.equals("24093-CM-252")?day>15:day%6!=0;
@@ -74,3 +81,4 @@ public class Bootstrap implements CommandLineRunner {
   svc.database().update("INSERT INTO users(pin,name,email,mobile,password,role,status,department,section,mentor_id) VALUES (?,?,?,?,?,?,?,?,?,?)",p,n,e,m,svc.passwordEncoder().encode(pass),r,s,dept,section,mentor);
  }
 }
+
