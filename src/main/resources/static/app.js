@@ -65,3 +65,14 @@ function bindPage(){if($('#search'))$('#search').oninput=e=>{query=e.target.valu
 
 function reviewButtons(l){return l.can_review?`<button class="btn small" data-decide="${l.id}" data-action="APPROVE">Approve</button><button class="btn small danger" data-decide="${l.id}" data-action="REJECT">Reject</button>`:'';}
 function reviewShortcuts(){return data.user.role==='STUDENT'?'':`<section class="review-shortcuts" aria-label="Approval shortcuts"><div><strong>Approval center</strong><small>${esc(data.user.name)} · ${esc(data.user.pin)}</small></div><div class="actions"><button class="btn ${page==='registrations'?'':'secondary'}" data-page="registrations">${({TEACHER:'Student',HOD:'Teacher',ADMIN:'HOD'}[data.user.role]||'')} registrations (${registrations().length})</button><button class="btn ${page==='approvals'?'':'secondary'}" data-page="approvals">${data.user.role==='ADMIN'?'HOD leave':'Leave'} approvals (${pending().length})</button><button class="btn secondary" data-refresh>Refresh requests</button></div></section>`;}
+
+async function start(){
+ try{
+  config=await api('/public/config');
+  auth();
+ }catch(error){
+  $('#app').innerHTML=`<main class="auth-main"><section class="auth-card"><span class="eyebrow muted">CAMPUSFLOW</span><h1>We couldn’t load your workspace.</h1><p>${esc(error.message||'Check your connection and try again.')}</p><button class="btn" type="button" onclick="location.reload()">Try again ${icon('arrow')}</button></section></main>`;
+ }
+}
+start();
+
