@@ -77,6 +77,9 @@ public class PortalService {
   int present=db.queryForObject("SELECT COUNT(*) FROM attendance WHERE student_id=? AND status='PRESENT'",Integer.class,uid);
   return Math.round(1000.0*present/total)/10.0;
  }
+ private static long leaveDays(Map<String,Object> leave){
+  return ChronoUnit.DAYS.between(LocalDate.parse(leave.get("start_date").toString()),LocalDate.parse(leave.get("end_date").toString()))+1;
+ }
  @Transactional public void apply(Map<String,Object> actor,Api.LeaveForm r){
   check(!role(actor,"ADMIN"),"Administrator accounts review HOD leave and cannot apply for leave.");
   db.queryForMap("SELECT id FROM users WHERE id=? FOR UPDATE",id(actor,"id"));
@@ -139,9 +142,10 @@ public class PortalService {
   String leaveScope;Object[] leaveArgs;
   if(role(actor,"STUDENT")){leaveScope="u.id=?";leaveArgs=new Object[]{id(actor,"id")};}
   else if(role(actor,"TEACHER")){leaveScope="u.id=? OR (u.role='STUDENT' AND u.mentor_id=?)";leaveArgs=new Object[]{id(actor,"id"),id(actor,"id")};}
-  else if(role(actor,"HOD")){leaveScope="(u.department=? AND ((u.role='STUDENT' AND (DATEDIFF(l.end_date,l.start_date)+1>=4 OR l.recommendation='HOD_REVIEW' OR l.status='PENDING_HOD')) OR (u.role='TEACHER' AND l.status='PENDING_HOD'))) OR u.id=?";leaveArgs=new Object[]{actor.get("department"),id(actor,"id")};}
+  else if(role(actor,"HOD")){leaveScope="(u.department=? AND (u.role='STUDENT' OR (u.role='TEACHER' AND l.status='PENDING_HOD'))) OR u.id=?";leaveArgs=new Object[]{actor.get("department"),id(actor,"id")};}
   else {leaveScope="u.role='HOD'";leaveArgs=new Object[]{};}
   var leaves=db.queryForList("SELECT l.*,u.name,u.pin,u.role,u.department,u.section FROM leaves l JOIN users u ON u.id=l.user_id WHERE "+leaveScope+" ORDER BY l.created_at DESC",leaveArgs);
+  if(role(actor,"HOD"))leaves.removeIf(l->"STUDENT".equals(l.get("role"))&&leaveDays(l)<4&& !"HOD_REVIEW".equals(l.get("recommendation"))&& !"PENDING_HOD".equals(l.get("status")));
   leaves.forEach(l->{l.put("can_review",canReview(actor,l));l.put("events",db.queryForList("SELECT e.action,e.note,e.created_at,u.name FROM leave_events e JOIN users u ON u.id=e.actor_id WHERE e.leave_id=? ORDER BY e.id",l.get("id")));});
   result.put("leaves",leaves);
   result.put("people",db.queryForList("SELECT u.id,u.pin,u.name,u.mobile,u.role,u.status,u.department,u.section,u.mentor_id,u.review_note FROM users u WHERE "+peopleScope+" ORDER BY u.name",peopleArgs));

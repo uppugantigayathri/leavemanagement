@@ -71,7 +71,7 @@ class PortalServiceTest {
  }
  @Test void hodDashboardShowsOnlyLongOrEscalatedStudentRequests(){
   var rows=(List<Map<String,Object>>)svc.dashboard(hod()).get("leaves");
-  assertTrue(rows.stream().allMatch(l->!"STUDENT".equals(l.get("role"))||java.time.temporal.ChronoUnit.DAYS.between(LocalDate.parse(l.get("start_date").toString()),LocalDate.parse(l.get("end_date").toString()))+1>=4||"HOD_REVIEW".equals(l.get("recommendation"))));
+  assertTrue(rows.stream().allMatch(l->!"STUDENT".equals(l.get("role"))||java.time.temporal.ChronoUnit.DAYS.between(LocalDate.parse(l.get("start_date").toString()),LocalDate.parse(l.get("end_date").toString()))+1>=4||"HOD_REVIEW".equals(l.get("recommendation"))||"PENDING_HOD".equals(l.get("status"))));
  }
  @Test void calendarDatesAreNotConvertedToUtcInstants(){var dashboard=svc.dashboard(student());var leaves=(List<?>)dashboard.get("leaves");var first=(Map<?,?>)leaves.get(0);assertEquals(LocalDate.now().plusDays(2).toString(),first.get("start_date"));}
  @Test void passwordResetCodeIsSingleUse(){long uid=PortalService.id(student(),"id");svc.database().update("INSERT INTO reset_codes(user_id,code_hash,expires_at) VALUES (?,?,?)",uid,svc.passwordEncoder().encode("123456"),java.time.LocalDateTime.now().plusMinutes(5));api.reset(new Api.Reset("24093-CM-228","123456","ChangedPassword123"));assertTrue(svc.passwordEncoder().matches("ChangedPassword123",svc.user("24093-CM-228").get("password").toString()));assertThrows(ResponseStatusException.class,()->api.reset(new Api.Reset("24093-CM-228","123456","AnotherPassword123")));}
