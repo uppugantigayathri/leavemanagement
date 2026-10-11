@@ -21,10 +21,12 @@ Use the role buttons on the login page, or these accounts:
 | Role | PIN | Password |
 |---|---|---|
 | Student | 24093-CM-228 | Campus@2026 |
+| Student | 24093-CM-252 | Campus@2026 |
 | Teacher | FAC-CM-101 | Campus@2026 |
 | HOD | HOD-CM-001 | Campus@2026 |
+| Admin | ADMIN-CM-001 | Campus@2026 |
 
-This is a shared sample-data POC. People with the public URL can use the published demo accounts, including HOD, and change demo records. Do not enter real student data or secrets. SMS is disabled by the demo profile. Email is disabled until Gmail SMTP environment secrets are configured.
+The demo seeds four departments and four sections with four students each. Every demo student has 30 attendance entries. This is a shared sample-data POC: people with the public URL can use demo accounts and change sample records. Do not enter real student data or secrets. SMS is disabled by the demo profile. Email is disabled until Gmail SMTP environment secrets are configured.
 
 ## Gmail email and password recovery
 
@@ -46,7 +48,7 @@ git pull --ff-only
 bash .devcontainer/start-poc.sh
 ```
 
-Logs: `.poc/app.log`. H2 database: `.poc/data/campusflow.mv.db`. Both are excluded from Git. Workspace files survive stopping/restarting the same Codespace and normal container rebuilds, but deleting the Codespace deletes them. A different Codespace gets a separate sample database. Export/back up data you want to retain before deleting a Codespace.
+Logs: `.poc/app.log`. Updated demo H2 database: `.poc/data/campusflow-v2.mv.db`. Both are excluded from Git. The new demo file gives the updated build a clean sample dataset and preserves the previous `.poc/data/campusflow.mv.db`. Workspace files survive stopping/restarting the same Codespace and normal container rebuilds, but deleting the Codespace deletes them. A different Codespace gets a separate sample database. Export/back up data you want to retain before deleting a Codespace.
 
 The URL works only while the Codespace and app are running. Codespaces can stop automatically after inactivity; public visitors should not be relied on to prevent this. Stop the Codespace when not demonstrating it, and restart it from https://github.com/codespaces when needed. Check port visibility again after restarting. GitHub usage limits and retention rules still apply; this is not permanent hosting.
 

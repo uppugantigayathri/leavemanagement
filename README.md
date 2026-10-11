@@ -18,18 +18,20 @@ Visit **http://localhost:8080**. Windows users can also run `./start.ps1 -Demo`.
 | Role | PIN | Demo password |
 |---|---|---|
 | Student | 24093-CM-228 | Campus@2026 |
+| Student | 24093-CM-252 | Campus@2026 |
 | Teacher | FAC-CM-101 | Campus@2026 |
 | HOD | HOD-CM-001 | Campus@2026 |
+| Admin | ADMIN-CM-001 | Campus@2026 |
 
-Demo mode uses a separate persistent H2 database in `data/demo/`, with sample attendance, leave requests, and pending registrations. It explicitly disables SMS. Demo credentials are never seeded in the default deployment profile. Do not use the demo profile for real college records.
+Demo mode uses a separate persistent H2 file database in `data/demo/`. It seeds 4 departments, sections A–D, 4 students per section, and 30 attendance entries per student. All demo accounts use `Campus@2026`; demo credentials are never seeded in the default deployment profile. SMS is disabled in demo mode. Do not use the demo profile for real college records.
 
 ## Deploy with persistent H2 (default)
 
-No MySQL installation or connection is needed. The default profile stores real accounts, attendance, leave, notifications, and recovery records in an H2 file database. Tables are created automatically on first startup. The default profile creates only the initial HOD; it does not create demo users.
+No MySQL installation or connection is needed. The default profile stores accounts, attendance, leave, notifications, and recovery records in an H2 file database. Passwords are stored as BCrypt hashes. Tables and the class-section migration run automatically. Configure the initial Admin account using the `ADMIN_*` variables below; Admin reviews HOD registrations and HOD leave.
 
-1. Copy `.env.example` to `.env` and set a database password and the initial HOD's PIN, password, mobile, Gmail address, name, and department.
+1. Copy `.env.example` to `.env` and set the database password and initial Admin PIN, password, 10-digit mobile, email, and name.
 2. Run `./start.ps1` on Windows. This script loads `.env`. Alternatively, export the environment variables and run `java -jar target/campusflow-1.0.0.jar`. Spring Boot does not automatically read `.env`.
-3. Sign in as HOD, then let teachers register and approve their accounts. Students can then register under approved teachers.
+3. Sign in as Admin and approve HOD registrations. Teachers select an approved HOD as their mentor; students select an approved teacher and a class section.
 
 `H2_DATA_PATH` defaults to `./data/campusflow` and is a **file prefix**: H2 writes `campusflow.mv.db`. Use an absolute prefix on a mounted **persistent disk**, such as `/data/campusflow`, on your host. Relative paths resolve against the application's working directory.
 
@@ -41,7 +43,7 @@ The H2 connection sets `WRITE_DELAY=0`, so committed updates are written immedia
 
 For local Docker, fill in `.env`, then run `docker compose up --build -d`. The supplied configuration runs the application with an H2 named volume and no MySQL service. A normal `docker compose down` preserves the volume; do not use `down -v` unless you intend to delete the data. Docker binds localhost by default; configure your hosting platform's routing/HTTPS when deploying publicly. Set `COOKIE_SECURE=true` behind HTTPS.
 
-Demo and deployment databases are separate. Existing demos from the earlier version may be at `./data/campusflow`; use `H2_DEMO_DATA_PATH` to point to that existing prefix if you want to keep those samples. Do not reuse a sample database for real registrations. The currently running preview's existing demo file is preserved.
+Demo and deployment databases are separate. The updated demo uses a new `campusflow-v2` H2 file, leaving earlier demo data intact. The Codespaces starter likewise uses `.poc/data/campusflow-v2.mv.db`; existing sample files are preserved. Do not reuse a sample database for real registrations.
 
 For a consistent backup, stop the application, copy the complete database file to protected backup storage, and restart it. Restore with the application stopped, the same connection credentials, and the same compatible H2 version. Test backups before relying on them.
 
@@ -51,7 +53,7 @@ Upload the **contents of this campusflow folder** to your repository root, inclu
 
 The included GitHub Actions workflow runs `mvn clean verify` on Java 17 and saves the runnable JAR as a build artifact. It verifies the project; it does not deploy a server. This workflow has not been run on your GitHub account yet.
 
-GitHub Pages only hosts static websites and cannot run the Spring Boot backend or H2. Connect the repository to a Java/Docker-capable host with a persistent disk, or run the JAR on a server you control. The Dockerfile builds and tests the application. Set H2 and HOD environment variables in the host's secret/environment settings; leave `SPRING_PROFILES_ACTIVE` unset for normal H2 deployment. `PORT` is supported for host-assigned ports.
+GitHub Pages only hosts static websites and cannot run the Spring Boot backend or H2. Connect the repository to a Java/Docker-capable host with a persistent disk, or run the JAR on a server you control. The Dockerfile builds and tests the application. Set H2 and `ADMIN_*` environment variables in the host's secret/environment settings; leave `SPRING_PROFILES_ACTIVE` unset for normal H2 deployment. `PORT` is supported for host-assigned ports.
 
 Official GitHub Pages scope: https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages
 
@@ -67,12 +69,13 @@ Tables are created with the idempotent `schema.sql` initializer. Subsequent sche
 
 ## Screens and workflow
 
-- **Public:** login with PIN/password, registration with Gmail, email code recovery, new password.
+- **Public:** login with PIN/password, registration with department and class section, email code recovery, new password. Mobile numbers are validated as 10 digits.
 - **Student:** dashboard, new leave, request history and decision timeline, attendance, reports/CSV, notifications.
-- **Teacher:** dashboard, assigned-student registration reviews, student leave approvals/escalation, daily attendance, personal leave submitted to HOD, reports and notifications.
-- **HOD:** department dashboard, teacher registration reviews, escalated student/teacher leave approvals, department attendance and leave reports, notifications.
+- **Teacher:** dashboard, assigned-student registration reviews, daily attendance, student leave approvals, personal leave submitted to HOD, department/section analytics and notifications.
+- **HOD:** department dashboard, teacher registration reviews, long/low-attendance student leave approvals, teacher leave review, section analytics and notifications.
+- **Admin:** HOD registration review and HOD leave approvals across departments.
 
-Student accounts await their chosen teacher's approval. Teacher accounts await their department HOD's approval. Pending/rejected accounts cannot log in. HODs are provisioned from environment settings at first startup; public registration cannot create HOD accounts. The initial setup creates one department/HOD. Additional departments require administrator provisioning; there is no public department/HOD administration screen.
+Student accounts await their chosen teacher's approval. Teacher accounts await their selected HOD's approval. HOD accounts await Admin approval. Admin itself is provisioned from environment settings and cannot be publicly registered. Pending/rejected accounts cannot log in. Four departments are available: Computer Engineering, Information Technology, Electronics & Communication, and Mechanical Engineering.
 
 Teachers may only review their assigned students. HOD access is restricted to the configured department. All decisions, including escalation and cancellation, keep the reviewer's name, note, and timestamp. Approval/rejection is final. Pending leave can be cancelled by its applicant. Rejected registration currently requires administrator assistance; self-service reapplication is not included.
 
@@ -84,18 +87,17 @@ The assistant is an **explainable rule engine**, not a trained machine-learning 
 
 - student attendance is below **75%**, or attendance has not been recorded;
 - leave lasts **more than 3 calendar days**;
-- the applicant has **3 or more prior non-cancelled requests in the last 30 days**;
-- the applicant is a teacher.
+- the applicant is a teacher (teacher leave goes to the HOD), or an HOD (HOD leave goes to Admin).
 
-Reviewers can approve or reject; teachers can escalate. Invalid dates and overlaps are rejected during submission rather than turned into recommendations. No automatic approval or rejection occurs.
+Student leave of 4 or more calendar days goes to the HOD. Requests of 3 days or fewer go to the teacher when attendance is at least 75%. Low or unrecorded attendance sends even short student requests to the HOD. The application form shows the attendance percentage and routing reason, and the HOD request card repeats the percentage and 75% threshold. Reviewers can approve or reject; teachers can escalate. Invalid dates and overlaps are rejected at submission. No automatic approval or rejection occurs.
 
-Attendance = PRESENT ÷ all marked days, including ABSENT and LEAVE. Unmarked days are excluded. Teachers can enter/correct today and the previous seven days. LEAVE requires an approved request covering that date. Leave requests count weekends, must start today or later, and have a maximum duration of 30 days. The 75% / 3-day thresholds were selected by you; the recent-request trigger, calendar-day counting, and seven-day correction window are implementation defaults to confirm against college policy.
+Attendance = PRESENT ÷ all marked days, including ABSENT and LEAVE. Unmarked days are excluded. Teachers can enter/correct today and the previous seven days. LEAVE requires an approved request covering that date. Leave requests count weekends, must start today or later, and have a maximum duration of 30 days. Students see their percentage on the dashboard and leave form. Teacher and HOD reports can be filtered by department and section.
 
 ## SMS and password recovery
 
 Email uses Gmail SMTP. Set `MAIL_ENABLED=true`, `MAIL_USERNAME` to the sending Gmail address, `MAIL_PASSWORD` to a Google App Password, and `MAIL_FROM` to that Gmail address in `.env` or the hosting provider's secret settings. Do not use your regular Gmail password or commit secrets. Gmail requires 2-Step Verification before you can create an App Password. The app sends registration receipts, account/review notifications, and password reset codes. If email is not configured, account registration still works, but email recovery is unavailable. Existing accounts created before email support have a blank email; an administrator must add each user's correct email before that account can use recovery.
 
-Twilio SMS is an optional separate feature. Provide a Twilio account SID, auth token, and approved sending number in `.env` to enable SMS notifications. All mobile numbers use international format, e.g. `+919876543210`.
+Twilio SMS is an optional separate feature. Provide a Twilio account SID, auth token, and approved sending number in `.env` to enable SMS notifications. The form stores 10 digits; the current sender prefixes `+91` for Twilio delivery.
 
 In-app notifications work without SMS. When configured, registration/leave notifications enter `sms_outbox`, are attempted every minute, and retry up to three times. `SENT` means the provider accepted the message, not handset delivery confirmation. `FAILED` messages remain visible in the database for administrator follow-up. Delivery receipts and a delivery-monitoring UI are not included. The dispatcher is intended for a single app instance; use distributed locking before horizontal scaling.
 

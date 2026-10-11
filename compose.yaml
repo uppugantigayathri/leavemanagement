@@ -7,15 +7,21 @@ services:
       H2_DATA_PATH: /data/campusflow
       DB_USERNAME: ${DB_USERNAME:-sa}
       DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
-      HOD_PIN: ${HOD_PIN:?Set HOD_PIN in .env}
-      HOD_PASSWORD: ${HOD_PASSWORD:?Set HOD_PASSWORD in .env}
-      HOD_MOBILE: ${HOD_MOBILE:?Set HOD_MOBILE in .env}
-      HOD_NAME: ${HOD_NAME:-Department Head}
-      HOD_DEPARTMENT: ${HOD_DEPARTMENT:-Computer Engineering}
+      ADMIN_PIN: ${ADMIN_PIN:?Set ADMIN_PIN in .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+      ADMIN_MOBILE: ${ADMIN_MOBILE:?Set ADMIN_MOBILE in .env}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?Set ADMIN_EMAIL in .env}
+      ADMIN_NAME: ${ADMIN_NAME:-Campus Administrator}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
       TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
       TWILIO_FROM: ${TWILIO_FROM:-}
+      MAIL_ENABLED: ${MAIL_ENABLED:-false}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
     volumes:
       - campusflow-data:/data
     restart: unless-stopped

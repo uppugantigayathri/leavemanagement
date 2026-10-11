@@ -22,6 +22,11 @@ class EmailSchemaMigration implements ApplicationRunner {
     while(columns.next())if("email".equalsIgnoreCase(columns.getString("COLUMN_NAME")))hasEmail=true;
    }
    if(!hasEmail)db.execute("ALTER TABLE users ADD COLUMN email VARCHAR(254)");
+   boolean hasSection=false;
+   for(String table:new String[]{"users","USERS"})try(var columns=metadata.getColumns(connection.getCatalog(),null,table,null)){
+    while(columns.next())if("section".equalsIgnoreCase(columns.getString("COLUMN_NAME")))hasSection=true;
+   }
+   if(!hasSection)db.execute("ALTER TABLE users ADD COLUMN section VARCHAR(20) DEFAULT '' NOT NULL");
    boolean hasIndex=false;
    for(String table:new String[]{"users","USERS"})try(var indexes=metadata.getIndexInfo(connection.getCatalog(),null,table,true,false)){
     while(indexes.next())if("uq_users_email".equalsIgnoreCase(indexes.getString("INDEX_NAME")))hasIndex=true;

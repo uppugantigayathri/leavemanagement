@@ -15,7 +15,8 @@ public class SmsService {
  public boolean send(String mobile,String message){
   if(!configured())return false;
   try {
-   String body="To="+enc(mobile)+"&From="+enc(from)+"&Body="+enc(message);
+   String recipient=mobile.matches("[0-9]{10}")?"+91"+mobile:mobile;
+   String body="To="+enc(recipient)+"&From="+enc(from)+"&Body="+enc(message);
    var req=HttpRequest.newBuilder(URI.create("https://api.twilio.com/2010-04-01/Accounts/"+sid+"/Messages.json"))
     .timeout(Duration.ofSeconds(10)).header("Authorization","Basic "+Base64.getEncoder().encodeToString((sid+":"+token).getBytes(StandardCharsets.UTF_8)))
     .header("Content-Type","application/x-www-form-urlencoded").POST(HttpRequest.BodyPublishers.ofString(body)).build();

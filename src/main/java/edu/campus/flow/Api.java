@@ -21,8 +21,8 @@ public class Api {
  public Api(PortalService svc,TransactionTemplate tx,org.springframework.security.core.session.SessionRegistry sessions){this.svc=svc;this.tx=tx;this.sessions=sessions;}
  public record Register(@NotBlank @Pattern(regexp="[A-Za-z0-9-]{5,40}") String pin,@NotBlank @Size(max=100) String name,
   @NotBlank @Email @Size(max=254) String email,
-  @Pattern(regexp="\\+[1-9][0-9]{9,14}") @NotNull String mobile,@NotBlank @Size(min=10,max=64) String password,
-  @NotNull String role,@NotBlank @Size(max=100) String department,Long mentorId){}
+  @Pattern(regexp="[0-9]{10}") @NotNull String mobile,@NotBlank @Size(min=10,max=64) String password,
+  @NotNull String role,@NotBlank @Size(max=100) String department,@Size(max=20) String section,Long mentorId){}
  public record LeaveForm(@NotNull LocalDate startDate,@NotNull LocalDate endDate,@NotBlank String kind,@NotBlank @Size(min=10,max=2000) String reason){}
  public record Decision(@NotBlank String action,@NotBlank @Size(max=500) String note){}
  public record AttendanceEntry(long studentId,@NotBlank String status){}
@@ -31,8 +31,9 @@ public class Api {
  public record Reset(@NotBlank @Size(max=40) String pin,@Pattern(regexp="[0-9]{6}") @NotNull String code,@Size(min=10,max=64) @NotNull String password){}
  @GetMapping("/public/config") Object config(CsrfToken csrf){
   return Map.of("csrfToken",csrf.getToken(),"csrfHeader",csrf.getHeaderName(),"demo",demo,"emailEnabled",svc.email().configured(),
-   "departments",svc.database().queryForList("SELECT DISTINCT department FROM users WHERE role='HOD' AND status='APPROVED'"),
-   "mentors",svc.database().queryForList("SELECT id,name,department FROM users WHERE role='TEACHER' AND status='APPROVED'"));
+   "departments",PortalService.DEPARTMENTS.stream().map(d->Map.of("department",d)).toList(),
+   "sections",List.of("A","B","C","D"),
+   "mentors",svc.database().queryForList("SELECT id,name,department,role FROM users WHERE role IN ('TEACHER','HOD') AND status='APPROVED'"));
  }
  @PostMapping("/public/register") Object register(@Valid @RequestBody Register r){svc.register(r);return Map.of("message","Registration submitted. Your reviewer must approve access before you can sign in.");}
  @GetMapping("/dashboard") Object dashboard(Principal p){return svc.dashboard(svc.user(p.getName()));}
