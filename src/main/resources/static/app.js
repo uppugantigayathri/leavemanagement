@@ -1,3 +1,4 @@
+warning: in the working copy of 'src/main/resources/static/app.js', LF will be replaced by CRLF the next time Git touches it
 'use strict';
 const $=s=>document.querySelector(s), esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const paths={grid:'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',calendar:'M5 5h14v16H5z M8 3v4 M16 3v4 M5 10h14 M9 14h2 M14 14h2 M9 17h2',check:'M4 12l5 5L20 6',users:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M13 4a4 4 0 0 1 0 8 M22 21v-2a4 4 0 0 0-3-4 M12 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0',bell:'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9 M10 21h4',chart:'M4 3v18h17 M8 17v-5 M13 17V8 M18 17V4',file:'M6 3h8l4 4v14H6z M13 3v5h5 M9 12h6 M9 16h6',plus:'M12 4v16 M4 12h16',arrow:'M5 12h14 M14 7l5 5-5 5',logout:'M9 4H4v16h5 M9 12h12 M16 7l5 5-5 5',spark:'M12 2l3 7 7 3-7 3-3 7-3-7-7-3 7-3z',clock:'M12 8v5l3 2 M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0',menu:'M3 6h18 M3 12h18 M3 18h18',close:'M5 5l14 14 M19 5L5 19',shield:'M12 3l8 3v6c0 5-8 9-8 9s-8-4-8-9V6z M8 12l3 3 5-6'};
@@ -71,7 +72,7 @@ async function start(){
   config=await api('/public/config');
   auth();
  }catch(error){
-  $('#app').innerHTML=`<main class="auth-main"><section class="auth-card"><span class="eyebrow muted">CAMPUSFLOW</span><h1>We couldn’t load your workspace.</h1><p>${esc(error.message||'Check your connection and try again.')}</p><button class="btn" type="button" onclick="location.reload()">Try again ${icon('arrow')}</button></section></main>`;
+  $('#app').innerHTML=`<main class="auth-main"><section class="auth-card"><span class="eyebrow muted">CAMPUSFLOW</span><h1>We couldn’t load your workspace.</h1><p>${esc(error.message||'Check your connection and try again.')}</p><button class="btn" type="button" data-retry>Try again ${icon('arrow')}</button></section></main>`;
  }
 }
 start();
@@ -79,6 +80,7 @@ start();
 document.addEventListener('click',async event=>{
  const button=event.target.closest('button');
  if(!button)return;
+ if(button.hasAttribute('data-retry')){location.reload();return;}
  if(button.dataset.auth){authPage=button.dataset.auth;auth();return;}
  if(button.dataset.demo){
   $('#pin').value=button.dataset.demo;
